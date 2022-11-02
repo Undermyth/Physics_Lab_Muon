@@ -1,0 +1,7 @@
+minvalue - k relationship:
+minvalue = k * a + b
+where:
+    a = 4.7084304680613126e-08 is the dropping time (s)
+    b = -2.9228760271137206 is nearly 0 (V)
+    R^2 = 0.939396511916171
+result is from min-k-relation/test.py
