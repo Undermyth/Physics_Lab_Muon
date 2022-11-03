@@ -10,11 +10,11 @@ def get_curve_a():
         paramter = json.load(f)
     return paramter['curve_a']
 
-def get_curve_b(x, y, noise_threshold = 0.8):
+def get_curve_b(x, y, outer_min_pos = -1, noise_threshold = 0.8):
     a = get_curve_a()
-    minpos = np.argmin(y)
+    minpos = outer_min_pos if outer_min_pos != -1 else np.argmin(y)
     start = minpos
-    while np.abs(y[start] - y.min()) <= noise_threshold:
+    while np.abs(y[start] - y[minpos]) <= noise_threshold:
         start += 1
     sample_x = x[start]
     sample_y = y[start]
