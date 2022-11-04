@@ -1,14 +1,14 @@
 import matplotlib.pyplot as plt
 import numpy as np
 
-from peak_fix import fix_peak
-from search import search as find_peak
+from algorithm.peak_fix import fix_peak
+from algorithm.search import search as find_peak
 
 x = np.arange(2500) * 4e-9
 # p = 748
 # y = np.loadtxt('data3/data' + str(p) + '.txt')
 
-y = np.loadtxt('mock_data/data3/data456.txt')
+y = np.loadtxt('mock_data/data3/data3/data456.txt')
 
 peak_pos = find_peak(y)
 peak_num = peak_pos[0]

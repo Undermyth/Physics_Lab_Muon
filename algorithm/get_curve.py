@@ -1,5 +1,5 @@
 import json
-
+from typing import Union
 import numpy as np
 
 # API for get parameter a, b in
@@ -10,9 +10,10 @@ def get_curve_a():
         paramter = json.load(f)
     return paramter['curve_a']
 
-def get_curve_b(x, y, outer_min_pos = -1, noise_threshold = 0.8):
+def get_curve_b(x: np.ndarray, y: np.ndarray, outer_min_pos: Union[None, float], noise_threshold: float = 0.8):
     a = get_curve_a()
-    minpos = outer_min_pos if outer_min_pos != -1 else np.argmin(y)
+    # minpos = outer_min_pos if outer_min_pos != -1 else np.argmin(y)
+    minpos = np.argmin(y) if outer_min_pos == None else outer_min_pos
     start = minpos
     while np.abs(y[start] - y[minpos]) <= noise_threshold:
         start += 1

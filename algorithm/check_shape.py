@@ -1,8 +1,9 @@
+from typing import Union
 import json
 
 import numpy as np
 
-from get_curve import get_curve_a, get_curve_b
+from .get_curve import get_curve_a, get_curve_b
 
 # check the shape of y. Value returned could be:
 # if a point on the descending side is detected, then return the index and signal True.
@@ -11,14 +12,14 @@ from get_curve import get_curve_a, get_curve_b
 # The approximation will be made by finding the point just before descending, and ret-
 # urn the x position of the point plus a small fixation.
 
-def checkshape(x, y, outer_minpos = -1, noise_threshold = 0.8, not_on_line = 1, sample_interval = 1e-7):
+def checkshape(x: np.ndarray, y: np.ndarray, outer_minpos: Union[None, float], noise_threshold = 0.8, not_on_line = 1, sample_interval = 1e-7):
 
     # parameter preparation.
     with open('parameter.json') as f:
         parameter = json.load(f)
 
     # searching begin with the lowest point.
-    minpos = outer_minpos if outer_minpos != -1 else np.argmin(y)
+    minpos = np.argmin(y) if outer_minpos == None else outer_minpos
 
     # rule 1: if the line goes up two times on the left, then minpos - 1 is on the des-
     # cending side.
@@ -29,7 +30,7 @@ def checkshape(x, y, outer_minpos = -1, noise_threshold = 0.8, not_on_line = 1, 
     # rule 2: if the lowest point is far from the minus-exp curve which is fitted, then
     # the lowest point is on the descending side.
     a = get_curve_a()
-    b = get_curve_b(x, y, outer_min_pos = -1 if outer_minpos == -1 else minpos, noise_threshold = noise_threshold)
+    b = get_curve_b(x, y, outer_min_pos = outer_minpos, noise_threshold = noise_threshold)
     def minus_exp(x):
         return -np.exp(a * x + b)
     

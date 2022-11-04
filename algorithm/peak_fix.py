@@ -1,15 +1,15 @@
 import json
-
+from typing import Union
 import numpy as np
 from scipy.optimize import fsolve
 
-from check_shape import checkshape
-from get_curve import get_curve_a, get_curve_b
+from .check_shape import checkshape
+from .get_curve import get_curve_a, get_curve_b
 
 # fix the peak of low rate sampling. 
 # return the position(not index) of the peak.
 
-def fix_peak(x, y, min_pos = -1, noise_threshold = 0.8, not_on_line = 1, sample_interval = 1e-7):
+def fix_peak(x: np.ndarray, y: np.ndarray, min_pos: Union[None, float], noise_threshold: float = 0.8, not_on_line: float = 1, sample_interval: float = 1e-7):
 
     # definition for return value.
     return_peakpos = 0
