@@ -56,3 +56,9 @@ class waveform:
                                                                                                     not_on_line = self.not_on_line,
                                                                                                     sample_interval = self.sample_interval
                                                                                                     )
+    def save_waveform(self, savepath: str, filename: str):
+        np.savetxt(savepath + filename, self.y)
+
+# mock
+if __name__ == '__main__':
+    wave = waveform(time_line = '4E-9')
