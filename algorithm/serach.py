@@ -1,6 +1,6 @@
 import numpy as np
 
-def search(Y:np.ndarray,n=2500,V_=-0.1,tV_=-0.2,zV_=-0.8,dur=80,tesp=100,stesp=50)->np.ndarray:
+def search(Y:np.ndarray,n=2500,V_=-0.8,tV_=-2,zV_=-2,dur=3,tesp=4,stesp=2)->np.ndarray:
     # n=2500#数组大小
     # V_=-0.1#小于V_的才会进入峰的判断 记为能量判据
     # tV_=-0.2#次峰的门限
@@ -33,28 +33,31 @@ def search(Y:np.ndarray,n=2500,V_=-0.1,tV_=-0.2,zV_=-0.8,dur=80,tesp=100,stesp=5
         '''
         这里以下是凸包的主体
         '''
-        top=0
+        # top=0
+        # st[top]=i-1
+        # top=top+1
+        # st[top]=i
+        top=1
         st[top]=i-1
-        top=top+1
-        st[top]=i
         fg=0
         cnt=0#间隔判据
         ans[0]=0
+        # print(i)
         while i<n and p[i][1]<V_:
             while top>1 and np.cross(p[st[top]]-p[st[top-1]],p[i]-p[st[top]])<=0:
                 top=top-1
             if (not fg) and top>1 and p[i][1]-p[st[top]][1]>=0:
                 fg=top+1#找到了峰
                 # print(fg,st[:top+1])
-                if i+tesp//3<n and p[i][1]==np.amin(Y[i:i+tesp//3]) and p[i][1]==np.amax(Y[i:i+tesp//3]):
-                # if i<n-1 and p[i][1]==p[i+1][1] and i+tesp//3<n and p[i+1][1]==p[i+tesp//3][1]:
+                # if i+tesp//3<n and p[i][1]==np.amin(Y[i:i+tesp//3]) and p[i][1]==np.amax(Y[i:i+tesp//3]):
+                if p[i][1]==p[i-1][1] and i<n-1 and p[i][1]==p[i+1][1]:
                     ans[0]=ans[0]+1
                     ans[ans[0]]=i
                     while p[i][1]==p[i+1][1]:
                         i=i+1
                     st[top]=i-1
                     # print("ping")
-                bias=i
+                bias=st[top]
                 maxn=p[i][1]
                 while i<=st[top]+tesp and i<n and p[i][1]<V_  and p[i][0]<p[st[top]][0]+tesp:
                     if maxn>p[i][1]:
@@ -107,7 +110,10 @@ def search(Y:np.ndarray,n=2500,V_=-0.1,tV_=-0.2,zV_=-0.8,dur=80,tesp=100,stesp=5
         st[top+1]=0
         i=i+1
     # print(aans)
-    mx,_=aans.shape
+    if len(aans.shape)==2:
+        mx,_ =aans.shape 
+    else :
+        mx=1
     for i in range(1,mx):
         l=aans[i][aans[i][0]]
         r=aans[i+1][1] if i+1<mx else n-1
