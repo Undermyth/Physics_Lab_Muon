@@ -57,6 +57,10 @@ if __name__ == '__main__':
     xincr = engine.xincr
     wave = waveform(time_line = xincr)
     engine.get_data(wave)
+    print(engine.xincr)
+    print(engine.yoff)
+    print(engine.ymult)
+    print(engine.yzero)
     print(wave.y)
 
                     
