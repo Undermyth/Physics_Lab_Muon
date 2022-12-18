@@ -3,7 +3,7 @@ import numpy as np
 def search(Y:np.ndarray,n=2500,V_=-0.8,tV_=-2,zV_=-2,dur=3,tesp=4,stesp=2) -> np.ndarray:
     # n=2500#数组大小
     # V_=-0.1#小于V_的才会进入峰的判断 记为能量判据
-    # tV_=-0.2#次峰的门限
+    # tV_=-2#次峰的门限
     # zV_=-0.8
     # dur=80#间隔小于此不记为一个峰 记为间隔判据
     # tesp=100#原图相连 tesp 个点视为一个点 处理相近的数据
@@ -56,7 +56,6 @@ def search(Y:np.ndarray,n=2500,V_=-0.8,tV_=-2,zV_=-2,dur=3,tesp=4,stesp=2) -> np
                     while p[i][1]==p[i+1][1]:
                         i += 1
                     st[top]=i-1
-                                                    # print("ping")
                 bias=st[top]
                 maxn=p[i][1]
                 while i <= bias + tesp and i < n and p[i][1] < V_ and p[i][0] < p[bias][0] + tesp:
