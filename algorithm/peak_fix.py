@@ -31,7 +31,7 @@ def fix_peak(x: np.ndarray, y: np.ndarray, min_pos: Union[None, float], noise_th
                                                 not_on_line = not_on_line,
                                                 sample_interval = sample_interval)
     
-    print(have_point_on_descending)     # debug
+    # print(have_point_on_descending)     # debug
     
     # if not have point on the descending, then approximate the peak directly.
     minpos = min_pos if min_pos != -1 else np.argmin(y)

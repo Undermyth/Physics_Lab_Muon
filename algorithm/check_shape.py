@@ -24,7 +24,7 @@ def checkshape(x: np.ndarray, y: np.ndarray, outer_minpos: Union[None, float], n
     # rule 1: if the line goes up two times on the left, then minpos - 1 is on the des-
     # cending side.
     if np.abs(y[minpos - 2] - y[minpos - 1]) > noise_threshold:
-        print('fit rule 1')     # debug
+        # print('fit rule 1')     # debug
         return minpos - 1, True
     
     # rule 2: if the lowest point is far from the minus-exp curve which is fitted, then
@@ -37,7 +37,7 @@ def checkshape(x: np.ndarray, y: np.ndarray, outer_minpos: Union[None, float], n
     # check the distance from the lowest point.
     predict_lowest = minus_exp(x[minpos])
     if np.abs(predict_lowest - y[minpos]) > not_on_line:
-        print('fit rule 2. predicted lowest = ', predict_lowest)     # debug
+        # print('fit rule 2. predicted lowest = ', predict_lowest)     # debug
         return minpos, True
     
     # rule 3: if nothing above happened, then the point just before descending can be a 
@@ -45,7 +45,7 @@ def checkshape(x: np.ndarray, y: np.ndarray, outer_minpos: Union[None, float], n
     # the expected distance from the ideal descending point will be added.
     dropping_time = parameter['dropping_time']
     fixation = (sample_interval - dropping_time) / 2
-    print('fit rule 3')     # debug
+    # print('fit rule 3')     # debug
     return x[minpos - 1] + fixation, False
 
 # mock
