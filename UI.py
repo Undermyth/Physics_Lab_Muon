@@ -85,7 +85,7 @@ class Muon(ttk.Frame):
 
         self.tv.bind('<Double-Button-1>',self.TreeSelect)
 
-        self.tv.pack(side=TOP,fill=X,expand=YES)
+        self.tv.pack(side=TOP,fill=BOTH,expand=YES)
         
     def TreeSelect(self,event):
         """选择一个数据"""
@@ -115,14 +115,21 @@ class Muon(ttk.Frame):
         #命名格式xxx_num.csv, 依据num排序
         dirs=[i for i in dirs if len(i.split('.'))>1 and len(i.split('_'))>1 and i.split('.')[1]=="csv"]
         dirs.sort(key=lambda x:int((x.split('_')[1]).split('.')[0]))
-        self.maxn = int((dirs[-1].split('_')[1]).split('.')[0])
+        try:
+            self.maxn = int((dirs[-1].split('_')[1]).split('.')[0])
+        except:
+            self.maxn=0
         for file in dirs:
             # print(d+'/'+file)
-            t = os.path.getmtime(f'{d}/{file}')
-            timeStruct = time.localtime(t)
-            Ttime=time.strftime('%Y-%m-%d %H:%M:%S', timeStruct)
-            self.tv.insert('',END,values=(file,Ttime))
+            self.load_one(file)
         # self.tv.selection_set(len(dirs)-1)
+
+    def load_one(self,file):
+        """添加一个文件"""
+        t = os.path.getmtime(f'{self.d}/{file}')
+        timeStruct = time.localtime(t)
+        Ttime=time.strftime('%Y-%m-%d %H:%M:%S', timeStruct)
+        self.tv.insert('',END,values=(file,Ttime))
 
     def plt_view(self,master):
         """初始化图片（左上角）"""
@@ -149,7 +156,7 @@ class Muon(ttk.Frame):
         self.canvas.draw()
 
     def draw_pre(self,name:str):
-        """"""
+        """初始化一个数据展示"""
         # print("dd")
         # print(self.d+'/'+name)
         X = np.arange(2500) * 4e-9
@@ -196,7 +203,7 @@ class Muon(ttk.Frame):
         self.craete_buttonbox(container)
 
     def Initialize_wave(self):
-        """"""
+        """初始化波形"""
         xincr=1e-7
         self.args = {
             "noise_threshold": 0.8,
@@ -205,8 +212,8 @@ class Muon(ttk.Frame):
             "least_time": 1e-6,
             "most_time": 1e-5,
             "amplify_rate": 0.6,
-            # "least_main_peak": 2,
-            # "least_sub_peak": 2
+            "least_main_peak": 2,
+            "least_sub_peak": 2
         }
         self.w_show= wave.waveform(time_line = xincr, **self.args)
         self.w = wave.waveform(time_line = xincr, **self.args)
@@ -216,8 +223,10 @@ class Muon(ttk.Frame):
         try:
             self.dms = dm.dataengine(main_scale = '25E-6')
             self.init_fou.set(True)
+            return 1
         except IndexError:
             print(111)
+            return 0
 
     def create_from_entry(self, master, label, variable):
         """超参数的输入"""
@@ -290,8 +299,8 @@ class Muon(ttk.Frame):
 
 
     def on_toggle(self):
-        if not self.init_fou.get() :
-            self.Initialize_oscilloscope()
+        if not self.init_fou.get() and not self.Initialize_oscilloscope():
+            return 
         """模式切换"""
         if self.running.get():
             self.stop_scan()
@@ -313,12 +322,15 @@ class Muon(ttk.Frame):
     def scan(self):
         """函数调用，数据写入文件"""
         # print(self.maxn)
-        # self.dms.get_data(w)
+        self.dms.get_data(self.w)
         self.w.process_data()
-        for i in range(w.peaknum):
-            tmp = w.peaks[i]
+        for i in range(self.w.peaknum):
+            tmp = self.w.peaks[i]
             if tmp["has_second_peak"]:
-                self.w.save_waveform(self.d, f"double_{self.d}.csv")
+                self.maxn+=1
+                self.w.save_waveform(self.d, f"/double_{self.maxn}.csv")
+                self.load_one(f"double_{self.maxn}.csv")
+                self.draw_pre(f"double_{self.maxn}.csv")
                 break
                 # plt.scatter([tmp["main_peak"][0], tmp["second_peak"][0]], [tmp["main_peak"][1], tmp["second_peak"][1]], color = 'red')
 

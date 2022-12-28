@@ -15,7 +15,9 @@ class waveform:
                 least_time: float = 1e-6,
                 most_time: float = 1e-5,
                 amplify_rate: float = 0.6,
-                flat_length: int = 30):
+                flat_length: int = 30,
+                least_main_peak: float = 2.0,
+                least_sub_peak: float = 2.0):
         
 
         xincr = float(time_line)
@@ -29,6 +31,8 @@ class waveform:
         self.most_time = most_time                  # largest time interval for double peak
         self.amplify_rate = amplify_rate            # largest ratio for small_peak_height / large_peak_height
         self.flat_length = flat_length              # maximum length for flat peak
+        self.least_main_peak = least_main_peak      # minimum height for main peak (used in search@chenke)(minus)
+        self.least_sub_peak = least_sub_peak        # minimum height for sub peak (used in search@chenke)(minus)
 
         self.peaks = np.empty(self.max_peak_num, dtype = peak)
 
@@ -37,7 +41,7 @@ class waveform:
     
     def process_data(self):
         
-        peak_detected = search_peak(self.y)
+        peak_detected = search_peak(self.y, zV_ = -self.least_main_peak, tV_ = -self.least_sub_peak)
 
         self.peaks, peak_num = combinepeak(peak_detected, self.y,
                                             max_peak_num = self.max_peak_num,
@@ -62,6 +66,7 @@ class waveform:
                                                                                         sample_interval = self.sample_interval
                                                                                         )
     def save_waveform(self, savepath: str, filename: str):
+        # print(savepath + filename)
         np.savetxt(savepath + filename, self.y)
 
 # mock

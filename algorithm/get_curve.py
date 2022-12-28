@@ -14,11 +14,11 @@ def get_curve_b(x: np.ndarray, y: np.ndarray, outer_min_pos: Union[None, float],
     a = get_curve_a()
     # minpos = outer_min_pos if outer_min_pos != -1 else np.argmin(y)
     minpos = np.argmin(y) if outer_min_pos == None else outer_min_pos
-    start = minpos
-    while np.abs(y[start] - y[minpos]) <= noise_threshold:
-        start += 1
-    sample_x = x[start]
-    sample_y = y[start]
+    sample_x = x[minpos + 1]
+    sample_y = y[minpos + 1]
+    if sample_y >= 0:
+        sample_x = x[minpos]
+        sample_y = y[minpos]
     lny = np.log(-sample_y)
     b = lny - a * sample_x
     return b

@@ -53,7 +53,7 @@ def search(Y:np.ndarray,n=2500,V_=-0.8,tV_=-2,zV_=-2,dur=3,tesp=4,stesp=2) -> np
                 if p[i][1]==p[i-1][1] and i<n-1 and p[i][1]==p[i+1][1]:
                     ans[0] += 1
                     ans[ans[0]]=i
-                    while p[i][1]==p[i+1][1]:
+                    while i<n-1 and p[i][1]==p[i+1][1]:
                         i += 1
                     st[top]=i-1
                                                     # print("ping")
@@ -114,6 +114,8 @@ def search(Y:np.ndarray,n=2500,V_=-0.8,tV_=-2,zV_=-2,dur=3,tesp=4,stesp=2) -> np
     for i in range(1,mx):
         l=aans[i][aans[i][0]]
         r=aans[i+1][1] if i+1<mx else n-1
+        if r-l<=dur:
+            continue
         tmp=np.argmin(Y[l:r+1])
         # print(l,r,tmp)
         while (tmp <= stesp or r - l - stesp <= tmp) and r - l > dur and Y[l + tmp] < tV_:
