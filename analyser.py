@@ -34,6 +34,7 @@ def analyse(datapath: str,
     sub_width = max_sub_height / channels
     main_bucket_13731 = np.zeros(channels)
     sub_bucket_13731 = np.zeros(channels)
+    kernel = np.array([1,3,7,3,1])
     average_life = 0
     count = 0
 
@@ -63,7 +64,13 @@ def analyse(datapath: str,
                 average_life += life
                 count += 1
 
-    # 1-3-7-3-1 weighted average 
+    # 1-3-7-3-1 wave filtering 
+    main_bucket=np.pad(main_bucket,(2,2),'constant')
+    sub_bucket=np.pad(sub_bucket,(2,2),'constant')
+
+    main_bucket_13731=np.array([(main_bucket[i-2:i+3]*kernel).sum() for i in range(2, channels + 2)])
+    sub_bucket_13731=np.array([(sub_bucket[i-2:i+3]*kernel).sum() for i in range(2, channels + 2)])
+    '''
     for i in range(2, channels - 2):
         main_bucket_13731[i] = 1 * main_bucket[i - 2] + 3 * main_bucket[i - 1] + 7 * main_bucket[i] + 3 * main_bucket[i + 1] + 1 * main_bucket[i + 2]
         sub_bucket_13731[i] = 1 * sub_bucket[i - 2] + 3 * sub_bucket[i - 1] + 7 * sub_bucket[i] + 3 * sub_bucket[i + 1] + 1 * sub_bucket[i + 2]
@@ -77,7 +84,7 @@ def analyse(datapath: str,
     sub_bucket_13731[1]            = sub_bucket[1]
     sub_bucket_13731[channels - 2] = sub_bucket[channels - 2]
     sub_bucket_13731[channels - 1] = sub_bucket[channels - 1]
-
+    '''
     average_life /= count
 
     return main_bucket_13731, sub_bucket_13731, average_life, count

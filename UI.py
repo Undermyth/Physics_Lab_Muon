@@ -17,6 +17,7 @@ matplotlib.rcParams['axes.unicode_minus']=False     # 正常显示负号
 
 # PATH = Path(__file__).parent 
 PATH=Path().absolute().as_posix()
+Golden_ratio=(np.sqrt(5)-1)/2
 
 class Muon(ttk.Frame):
 
@@ -26,6 +27,7 @@ class Muon(ttk.Frame):
 
         image_files = {
             'opened-folder': 'icons8_opened_folder_24px.png',
+            # 'window-icon': 'over.png',
         }
         self.photoimages = []
         imgpath = f"{PATH}/assets/"
@@ -117,7 +119,7 @@ class Muon(ttk.Frame):
         dirs.sort(key=lambda x:int((x.split('_')[1]).split('.')[0]))
         try:
             self.maxn = int((dirs[-1].split('_')[1]).split('.')[0])
-        except:
+        except Exception:
             self.maxn=0
         for file in dirs:
             # print(d+'/'+file)
@@ -136,35 +138,68 @@ class Muon(ttk.Frame):
         cv = tk.Canvas(master=master, background='white')
         cv.pack(side=TOP,fill=X,expand=YES)
 
+        self.crtl_cv_show=ttk.StringVar(value="")
+        self.crtl_cv=ttk.Button(
+            master=master,
+            bootstyle="success",
+            textvariable=self.crtl_cv_show,
+            command=self.draw_from_data,
+            width=30,
+        )
+        self.crtl_cv.pack(side=TOP,fill=X,expand=YES)
+        self.crtl_cv.configure(state='disable')
+
         f=plt.figure()
-        # self.draw_all_from_data(f,"double_1")
         self.a=f.add_subplot(1,1,1)
         self.canvas=FigureCanvasTkAgg(f,master=cv)
-        # self.canvas.draw()
         self.canvas.get_tk_widget().pack(fill=BOTH,expand=YES)
 
-    def draw_one_from_data(self,X,Y):
-        """展示一个峰"""
 
-    def draw_all_from_data(self,X,Y):
-        """展示一个数据"""
+    def draw_from_data(self):  # sourcery skip: extract-method
+        """展示一个数据, peaknum为全图，0-peaknum为子图"""
         # self.a=self.f.add_subplot(1,1,1,ylabel="电压",xlabel="时间")
         self.a.clear()
-        self.a.plot(X,Y)
+
+        if self.show_now==self.w_show.peaknum:
+            self.a.plot(self.X,self.Y)
+            for peak in self.w_show.peaks:
+                self.a.scatter(peak["main_peak"][0],peak["main_peak"][1],color='red')
+                if peak["has_second_peak"]:
+                    self.a.scatter(peak["second_peak"][0],peak["second_peak"][1],color='red')
+        else:
+            peak=self.w_show.peaks[self.show_now]
+
+            show_range=np.where((peak["main_peak"][0]-self.args["most_time"]*(1-Golden_ratio)<self.X) & (self.X<peak["main_peak"][0]+self.args["most_time"]*Golden_ratio))
+            self.a.plot(self.X[show_range],self.Y[show_range])
+            
+            self.a.scatter(peak["main_peak"][0],peak["main_peak"][1],color='red')
+            if peak["has_second_peak"]:
+                self.a.scatter(peak["second_peak"][0],peak["second_peak"][1],color='red')
+
         self.a.set_xlabel("时间/t")
         self.a.set_ylabel("电压/V")
         self.canvas.draw()
+
+        self.show_now= self.show_now+1 if self.show_now<self.w_show.peaknum else 0
+        
 
     def draw_pre(self,name:str):
         """初始化一个数据展示"""
         # print("dd")
         # print(self.d+'/'+name)
-        X = np.arange(2500) * 4e-9
-        Y = np.loadtxt(f'{self.d}/{name}')
-        self.w_show.y=Y
+        self.X = np.arange(2500) * self.xincr
+        self.Y = np.loadtxt(f'{self.d}/{name}')
+        self.w_show.y=self.Y
         self.w_show.process_data()
+        # print(self.w_show.peaks)
 
-        self.draw_all_from_data(X,Y)
+        self.crtl_cv.configure(state='enable')
+        # print(self.w_show.peaknum)
+        # print(self.w_show.peaks[0]["main_peak"][0]*0.1)
+
+        self.show_now=self.w_show.peaknum
+        self.draw_from_data()
+        # self.draw_all_from_data(X,Y)
 
 
     def right_panel(self):
@@ -182,13 +217,26 @@ class Muon(ttk.Frame):
         """初始化超参数（右上角）"""
         container=ttk.Frame(master)
         container.pack(side=TOP, fill=X,expand=YES)
-        self.noise_threshold=ttk.StringVar(value="")
-        self.least_time     =ttk.StringVar(value="")
-        self.most_time      =ttk.StringVar(value="")
-        self.least_main_peak=ttk.StringVar(value="")
-        self.least_sub_peak =ttk.StringVar(value="")
-        self.amplify_rate   =ttk.StringVar(value="")
-        self.flat_length    =ttk.StringVar(value="")
+
+        self.xincr=1e-7
+        self.args = {
+            "noise_threshold": 0.8,
+            "max_peak_num"   : 8,
+            "not_on_line"    : 1,
+            "least_time"     : 1e-6,
+            "most_time"      : 1e-5,
+            "amplify_rate"   : 0.6,
+            "least_main_peak": 2,
+            "least_sub_peak" : 2
+        }
+
+        self.noise_threshold=ttk.StringVar(value=self.args["noise_threshold"])
+        self.least_time     =ttk.StringVar(value=self.args["least_time"])
+        self.most_time      =ttk.StringVar(value=self.args["most_time"])
+        self.least_main_peak=ttk.StringVar(value=self.args["least_main_peak"])
+        self.least_sub_peak =ttk.StringVar(value=self.args["least_sub_peak"])
+        self.amplify_rate   =ttk.StringVar(value=self.args["amplify_rate"])
+        # self.flat_length    =ttk.StringVar(value=self.args["flat_length"])
 
         self.create_from_entry(container, "噪声门限", self.noise_threshold)
         self.create_from_entry(container, "最小主峰", self.least_main_peak)
@@ -196,7 +244,7 @@ class Muon(ttk.Frame):
         self.create_from_entry(container, "最短衰变时间", self.least_time)
         self.create_from_entry(container, "最长衰变时间", self.most_time)
         self.create_from_entry(container, "主次峰能量比", self.amplify_rate)
-        self.create_from_entry(container, "平顶长度", self.flat_length)
+        # self.create_from_entry(container, "平顶长度", self.flat_length)
 
         self.Initialize_wave()
 
@@ -204,19 +252,8 @@ class Muon(ttk.Frame):
 
     def Initialize_wave(self):
         """初始化波形"""
-        xincr=1e-7
-        self.args = {
-            "noise_threshold": 0.8,
-            "max_peak_num": 8,
-            "not_on_line": 1,
-            "least_time": 1e-6,
-            "most_time": 1e-5,
-            "amplify_rate": 0.6,
-            "least_main_peak": 2,
-            "least_sub_peak": 2
-        }
-        self.w_show= wave.waveform(time_line = xincr, **self.args)
-        self.w = wave.waveform(time_line = xincr, **self.args)
+        self.w_show= wave.waveform(time_line = self.xincr, **self.args)
+        self.w = wave.waveform(time_line = self.xincr, **self.args)
 
     def Initialize_oscilloscope(self):
         """初始化示波器"""
@@ -244,15 +281,21 @@ class Muon(ttk.Frame):
         container=ttk.Frame(master)
         container.pack(fill=X,expand=YES,pady=(15,10))
 
-        sub_btn=ttk.Button(
+        ttk.Button(
             master=container,
             text="修改",
             command=self.on_submit,
             bootstyle=SUCCESS,
             width=6,
-        )
-        sub_btn.pack(side=RIGHT, padx=5,expand=YES)
-        # sub_btn.focus_set()
+        ).pack(side=RIGHT, padx=5,expand=YES)
+
+        ttk.Button(
+            master=container,
+            text="多道扫描",
+            command=self.mul_scan,
+            bootstyle=SUCCESS,
+            width=8,
+        ).pack(side=RIGHT, padx=5,expand=YES)
 
         self.start_btn=ttk.Button(
             master=container,
@@ -263,6 +306,9 @@ class Muon(ttk.Frame):
         )
         self.start_btn.pack(side=LEFT, padx=5,expand=YES)
 
+    def mul_scan(self):
+        """调用多道扫描"""
+
     def on_submit(self):
         """修改超参数，判断超参数非法"""
         self.w_show.noise_threshold=self.noise_threshold.get()
@@ -271,7 +317,6 @@ class Muon(ttk.Frame):
         self.w_show.least_main_peak=self.least_main_peak.get()
         self.w_show.least_sub_peak =self.least_sub_peak .get()
         self.w_show.amplify_rate   =self.amplify_rate   .get()
-        self.w_show.flat_length    =self.flat_length    .get()
         if self.init_fou.get():
             self.w.noise_threshold=self.noise_threshold.get()
             self.w.least_time     =self.least_time     .get()
@@ -279,7 +324,6 @@ class Muon(ttk.Frame):
             self.w.least_main_peak=self.least_main_peak.get()
             self.w.least_sub_peak =self.least_sub_peak .get()
             self.w.amplify_rate   =self.amplify_rate   .get()
-            self.w.flat_length    =self.flat_length    .get()
         """弹个窗"""
 
     def print_log(self,master):
@@ -345,6 +389,9 @@ class Muon(ttk.Frame):
         self.afterid.set(self.after(1000,self.scan))
 
 if __name__ == "__main__":
-    app=ttk.Window("Muon")
+    app=ttk.Window(
+        title="Muon",
+        iconphoto=f"{PATH}/assets/over.png"
+    )
     Muon(app)
     app.mainloop()

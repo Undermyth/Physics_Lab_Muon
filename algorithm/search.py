@@ -1,6 +1,6 @@
 import numpy as np
 
-def search(Y:np.ndarray,n=2500,V_=-0.8,tV_=-2,zV_=-2,dur=3,tesp=4,stesp=2) -> np.ndarray:
+def search(Y:np.ndarray,n=2500,V_=-0.8,tV_=-2,zV_=-2,dur=3,tesp=8,stesp=2) -> np.ndarray:
     # n=2500#数组大小
     # V_=-0.1#小于V_的才会进入峰的判断 记为能量判据
     # tV_=-0.2#次峰的门限
