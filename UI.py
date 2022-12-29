@@ -12,6 +12,7 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import matplotlib.pyplot as plt
 import matplotlib
 from pathlib import Path
+from analyser import analyse
 matplotlib.rcParams['font.sans-serif']=['SimHei']   # 用黑体显示中文
 matplotlib.rcParams['axes.unicode_minus']=False     # 正常显示负号
 
@@ -38,7 +39,7 @@ class Muon(ttk.Frame):
         self.left_panel()
         self.right_panel()
 
-        self.get_load(f'{PATH}/data')
+        self.get_load(f'{PATH}/data/')
 
     def left_panel(self):
         """初始化左边"""
@@ -49,7 +50,6 @@ class Muon(ttk.Frame):
 
     def file_load(self,master):
         """初始化文件读入（左下角）"""
-        self.d=f'{PATH}/data'
         self.maxn=0
 
         self.file_input(master)
@@ -72,7 +72,11 @@ class Muon(ttk.Frame):
 
     def Treeview(self,master):
         """初始化文件树"""
-        self.tv = ttk.Treeview(master, show='headings', height=5)
+        Tv=ttk.Frame(master)
+        Tv.pack(side=TOP,fill=X,expand=YES)
+        ybar = ttk.Scrollbar(Tv,orient='vertical')
+        self.tv = ttk.Treeview(Tv, show='headings', height=5,yscrollcommand=ybar.set)
+        ybar['command'] = self.tv.yview
         self.tv.configure(
             columns=(
                 "name","time"
@@ -87,7 +91,8 @@ class Muon(ttk.Frame):
 
         self.tv.bind('<Double-Button-1>',self.TreeSelect)
 
-        self.tv.pack(side=TOP,fill=BOTH,expand=YES)
+        self.tv.pack(side=LEFT,fill=BOTH,expand=YES)
+        ybar.pack(side=RIGHT,fill=Y)
         
     def TreeSelect(self,event):
         """选择一个数据"""
@@ -128,7 +133,7 @@ class Muon(ttk.Frame):
 
     def load_one(self,file):
         """添加一个文件"""
-        t = os.path.getmtime(f'{self.d}/{file}')
+        t = os.path.getmtime(self.d+file)
         timeStruct = time.localtime(t)
         Ttime=time.strftime('%Y-%m-%d %H:%M:%S', timeStruct)
         self.tv.insert('',END,values=(file,Ttime))
@@ -138,7 +143,7 @@ class Muon(ttk.Frame):
         cv = tk.Canvas(master=master, background='white')
         cv.pack(side=TOP,fill=X,expand=YES)
 
-        self.crtl_cv_show=ttk.StringVar(value="")
+        self.crtl_cv_show=ttk.StringVar(value="缩放")
         self.crtl_cv=ttk.Button(
             master=master,
             bootstyle="success",
@@ -156,7 +161,7 @@ class Muon(ttk.Frame):
 
 
     def draw_from_data(self):  # sourcery skip: extract-method
-        """展示一个数据, peaknum为全图，0-peaknum为子图"""
+        """展示一个数据, peaknum为全图，[0,peaknum)为子图"""
         # self.a=self.f.add_subplot(1,1,1,ylabel="电压",xlabel="时间")
         self.a.clear()
 
@@ -187,13 +192,13 @@ class Muon(ttk.Frame):
         """初始化一个数据展示"""
         # print("dd")
         # print(self.d+'/'+name)
-        self.X = np.arange(2500) * self.xincr
-        self.Y = np.loadtxt(f'{self.d}/{name}')
+        self.X = np.arange(2500) * self.args["time_line"]
+        self.Y = np.loadtxt(self.d+name)
         self.w_show.y=self.Y
         self.w_show.process_data()
         # print(self.w_show.peaks)
 
-        self.crtl_cv.configure(state='enable')
+        self.crtl_cv.configure(state='normal')
         # print(self.w_show.peaknum)
         # print(self.w_show.peaks[0]["main_peak"][0]*0.1)
 
@@ -218,8 +223,8 @@ class Muon(ttk.Frame):
         container=ttk.Frame(master)
         container.pack(side=TOP, fill=X,expand=YES)
 
-        self.xincr=1e-7
         self.args = {
+            "time_line"      : 1e-7,
             "noise_threshold": 0.8,
             "max_peak_num"   : 8,
             "not_on_line"    : 1,
@@ -252,17 +257,18 @@ class Muon(ttk.Frame):
 
     def Initialize_wave(self):
         """初始化波形"""
-        self.w_show= wave.waveform(time_line = self.xincr, **self.args)
-        self.w = wave.waveform(time_line = self.xincr, **self.args)
+        self.w_show= wave.waveform(**self.args)
+        self.w = wave.waveform(**self.args)
 
     def Initialize_oscilloscope(self):
         """初始化示波器"""
         try:
             self.dms = dm.dataengine(main_scale = '25E-6')
             self.init_fou.set(True)
+            self.insert_log("示波器已初始化完成")
             return 1
         except IndexError:
-            print(111)
+            self.insert_log("示波器缺失")
             return 0
 
     def create_from_entry(self, master, label, variable):
@@ -308,6 +314,22 @@ class Muon(ttk.Frame):
 
     def mul_scan(self):
         """调用多道扫描"""
+        if self.running.get():
+            self.stop_scan()
+
+        self.crtl_cv.configure(state='disable')
+        self.a.clear()
+
+        mainbucket, subbucket, avtime, count = analyse(datapath = self.d, channels = 256, max_main_height = 60, max_sub_height = 30, **self.args)
+        # print(avtime, count)
+
+        self.a.bar(np.arange(256), mainbucket)
+        self.a.bar(np.arange(256), subbucket)
+        self.canvas.draw()
+
+        self.insert_log(f"多道扫描已完成\n\n共扫描{count}个数据\n平均衰变时间为{avtime}")
+        
+
 
     def on_submit(self):
         """修改超参数，判断超参数非法"""
@@ -325,6 +347,7 @@ class Muon(ttk.Frame):
             self.w.least_sub_peak =self.least_sub_peak .get()
             self.w.amplify_rate   =self.amplify_rate   .get()
         """弹个窗"""
+        self.insert_log("参数修改成功")
 
     def print_log(self,master):
         """初始化log（右下角）"""
@@ -337,7 +360,8 @@ class Muon(ttk.Frame):
             width=40
         )
         self.textbox.pack(fill=Y,expand=YES)
-        default_txt = "( ﾟ∀。)"
+        # default_txt = "( ﾟ∀。)"
+        default_txt = "已授权访问"
         self.textbox.insert(END,default_txt)
         self.textbox.configure(state="disabled")
 
@@ -356,12 +380,14 @@ class Muon(ttk.Frame):
         self.afterid.set(self.after(1,self.scan))
         self.running.set(True)
         self.start_btn.configure(bootstyle=(DANGER),text="停止扫描")
+        self.insert_log("扫描已开始")
 
     def stop_scan(self):
         """停止扫描"""
         self.after_cancel(self.afterid.get())
         self.running.set(False)
         self.start_btn.configure(bootstyle=(SUCCESS),text="开始扫描")
+        self.insert_log("扫描已终止")
 
     def scan(self):
         """函数调用，数据写入文件"""
@@ -372,21 +398,25 @@ class Muon(ttk.Frame):
             tmp = self.w.peaks[i]
             if tmp["has_second_peak"]:
                 self.maxn+=1
-                self.w.save_waveform(self.d, f"/double_{self.maxn}.csv")
+                self.w.save_waveform(self.d, f"double_{self.maxn}.csv")
                 self.load_one(f"double_{self.maxn}.csv")
                 self.draw_pre(f"double_{self.maxn}.csv")
                 break
                 # plt.scatter([tmp["main_peak"][0], tmp["second_peak"][0]], [tmp["main_peak"][1], tmp["second_peak"][1]], color = 'red')
 
         """写log"""
-        insert_txt = f"( ﾟ∀。){str(self.maxn)}"
+        # self.insert_log(f"( ﾟ∀。){str(self.maxn)}")
+        self.insert_log(f"已完成一次扫描，累计探测双峰{str(self.maxn)}个")
+        
+        self.afterid.set(self.after(1000,self.scan))
+
+    def insert_log(self,insert_txt):
+        """写入log"""
         self.textbox.configure(state="normal")
         self.textbox.insert(END,"\n\n")
         self.textbox.insert(END,insert_txt)
         self.textbox.configure(state="disabled")
         self.textbox.yview_moveto(1)
-
-        self.afterid.set(self.after(1000,self.scan))
 
 if __name__ == "__main__":
     app=ttk.Window(

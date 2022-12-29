@@ -38,10 +38,13 @@ def analyse(datapath: str,
     average_life = 0
     count = 0
 
-    for f in os.listdir(datapath):
+    dirs=os.listdir(datapath)
+    dirs=[i for i in dirs if len(i.split('.'))>1 and len(i.split('_'))>1 and i.split('.')[1]=="csv"]
+
+    for f in dirs:
 
         # debug
-        print(">", f)
+        # print(">", f)
 
         w = wave.waveform(**waveargs)
         y = np.loadtxt(datapath + f, dtype = np.float32)
