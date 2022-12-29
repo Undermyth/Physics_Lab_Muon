@@ -267,8 +267,8 @@ class Muon(ttk.Frame):
             self.init_fou.set(True)
             self.insert_log("示波器已初始化完成")
             return 1
-        except IndexError:
-            self.insert_log("示波器缺失")
+        except :
+            self.insert_log("示波器初始化失败")
             return 0
 
     def create_from_entry(self, master, label, variable):
@@ -317,6 +317,12 @@ class Muon(ttk.Frame):
         if self.running.get():
             self.stop_scan()
 
+        self.insert_log("多道扫描已开始，请耐心等待")
+
+        self.after(500,self.after_mul_scan)
+
+    def after_mul_scan(self):
+        """延后扫描"""
         self.crtl_cv.configure(state='disable')
         self.a.clear()
 
@@ -327,7 +333,7 @@ class Muon(ttk.Frame):
         self.a.bar(np.arange(256), subbucket)
         self.canvas.draw()
 
-        self.insert_log(f"多道扫描已完成\n\n共扫描{count}个数据\n平均衰变时间为{avtime}")
+        self.insert_log(f"多道扫描已完成\n\n共扫描{count}个数据\n平均衰变时间为{avtime}s")
         
 
 
