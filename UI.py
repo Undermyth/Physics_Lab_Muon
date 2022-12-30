@@ -432,8 +432,7 @@ class Muon(ttk.Frame):
 
     def start_scan(self):
         """开始扫描"""
-        self.t = threading.Thread(target=self.scan) 
-        self.t.start()
+        self.thread_it(self.scan)
         # self.afterid.set(self.after(1000,self.scan))
         self.running.set(True)
         self.start_btn.configure(bootstyle=(DANGER),text="停止扫描")
