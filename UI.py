@@ -170,16 +170,12 @@ class Muon(ttk.Frame):
         if self.show_now==self.w_show.peaknum:
             self.a.plot(self.X,self.Y)
             for peak in self.w_show.peaks:
+
                 if peak["has_second_peak"]:
                     self.a.scatter([peak["main_peak"][0], peak["second_peak"][0]], [peak["main_peak"][1], peak["second_peak"][1]], color="red")
                 else:
                     self.a.scatter(peak["main_peak"][0],peak["main_peak"][1],color='orange')
                 
-                a = get_curve.get_curve_a()
-                b = get_curve.get_curve_b(self.w_show.x, self.w_show.y, outer_min_pos=peak["main_peak"][0])
-                def minus_exp(x):
-                    return -np.exp(a * x + b)
-                xtick = np.linspace(peak["main_peak"][0], peak["main_peak"][0] + self.w_show, 30)
 
 
         else:
@@ -191,8 +187,20 @@ class Muon(ttk.Frame):
             self.a.plot(self.X[show_range],self.Y[show_range])
             if peak["has_second_peak"]:
                 self.a.scatter([peak["main_peak"][0], peak["second_peak"][0]], [peak["main_peak"][1], peak["second_peak"][1]], color="red")
+                a = get_curve.get_curve_a()
+                b = np.log(-peak["main_peak"][1]) - a * peak["main_peak"][0]
+                def minus_exp(x):
+                    return -np.exp(a * x + b)
+                xtick = np.linspace(peak["main_peak"][0], peak["main_peak"][0] + 3 * (self.w_show.x[1] - self.w_show.x[0]), 30)
+                self.a.plot(xtick, minus_exp(xtick), 'r--')
             else:
                 self.a.scatter(peak["main_peak"][0],peak["main_peak"][1],color='orange')
+                a = get_curve.get_curve_a()
+                b = np.log(-peak["main_peak"][1]) - a * peak["main_peak"][0]
+                def minus_exp(x):
+                    return -np.exp(a * x + b)
+                xtick = np.linspace(peak["main_peak"][0], peak["main_peak"][0] + 3 * (self.w_show.x[1] - self.w_show.x[0]), 30)
+                self.a.plot(xtick, minus_exp(xtick), 'r--')
 
         self.a.set_xlabel("时间/t")
         self.a.set_ylabel("电压/V")
