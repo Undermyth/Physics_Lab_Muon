@@ -1,9 +1,11 @@
+from analyser import analyse
 import dataengine as dm
 import waveform as wave
 import numpy as np
 import datetime
 import os
 import time
+import threading
 import tkinter as tk
 import ttkbootstrap as ttk
 from ttkbootstrap.constants import *
@@ -12,7 +14,6 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import matplotlib.pyplot as plt
 import matplotlib
 from pathlib import Path
-from analyser import analyse
 matplotlib.rcParams['font.sans-serif']=['SimHei']   # 用黑体显示中文
 matplotlib.rcParams['axes.unicode_minus']=False     # 正常显示负号
 
@@ -143,11 +144,11 @@ class Muon(ttk.Frame):
         cv = tk.Canvas(master=master, background='white')
         cv.pack(side=TOP,fill=X,expand=YES)
 
-        self.crtl_cv_show=ttk.StringVar(value="缩放")
+        # self.crtl_cv_show=ttk.StringVar(value="缩放")
         self.crtl_cv=ttk.Button(
             master=master,
             bootstyle="success",
-            textvariable=self.crtl_cv_show,
+            text="",
             command=self.draw_from_data,
             width=30,
         )
@@ -168,9 +169,6 @@ class Muon(ttk.Frame):
         if self.show_now==self.w_show.peaknum:
             self.a.plot(self.X,self.Y)
             for peak in self.w_show.peaks:
-                # self.a.scatter(peak["main_peak"][0],peak["main_peak"][1],color='red')
-                # if peak["has_second_peak"]:
-                #     self.a.scatter(peak["second_peak"][0],peak["second_peak"][1],color='red')
                 if peak["has_second_peak"]:
                     self.a.scatter([peak["main_peak"][0], peak["second_peak"][0]], [peak["main_peak"][1], peak["second_peak"][1]], color="red")
                 else:
@@ -180,10 +178,6 @@ class Muon(ttk.Frame):
 
             show_range=np.where((peak["main_peak"][0]-self.args["most_time"]*(1-Golden_ratio)<self.X) & (self.X<peak["main_peak"][0]+self.args["most_time"]*Golden_ratio))
             self.a.plot(self.X[show_range],self.Y[show_range])
-            
-            # self.a.scatter(peak["main_peak"][0],peak["main_peak"][1],color='red')
-            # if peak["has_second_peak"]:
-            #     self.a.scatter(peak["second_peak"][0],peak["second_peak"][1],color='red')
             if peak["has_second_peak"]:
                 self.a.scatter([peak["main_peak"][0], peak["second_peak"][0]], [peak["main_peak"][1], peak["second_peak"][1]], color="red")
             else:
@@ -206,13 +200,12 @@ class Muon(ttk.Frame):
         self.w_show.process_data()
         # print(self.w_show.peaks)
 
-        self.crtl_cv.configure(state='normal')
+        self.crtl_cv.configure(state='normal',command=self.draw_from_data,text="缩放")
         # print(self.w_show.peaknum)
         # print(self.w_show.peaks[0]["main_peak"][0]*0.1)
 
         self.show_now=self.w_show.peaknum
         self.draw_from_data()
-        # self.draw_all_from_data(X,Y)
 
 
     def right_panel(self):
@@ -270,14 +263,14 @@ class Muon(ttk.Frame):
 
     def Initialize_oscilloscope(self):
         """初始化示波器"""
-        # try:
-        self.dms = dm.dataengine(main_scale = '25E-6')
-        self.init_fou.set(True)
-        self.insert_log("示波器已初始化完成")
-        return 1
-        # except :
-        #     self.insert_log("示波器初始化失败")
-        #     return 0
+        try:
+            self.dms = dm.dataengine(main_scale = '25E-6')
+            self.init_fou.set(True)
+            self.insert_log("示波器已初始化完成")
+            return 1
+        except Exception:
+            self.insert_log("示波器初始化失败")
+            return 0
 
     def create_from_entry(self, master, label, variable):
         """超参数的输入"""
@@ -306,7 +299,8 @@ class Muon(ttk.Frame):
         ttk.Button(
             master=container,
             text="多道扫描",
-            command=self.mul_scan,
+            # command=self.mul_scan,
+            command=lambda: self.thread_it(self.mul_scan),
             bootstyle=SUCCESS,
             width=8,
         ).pack(side=RIGHT, padx=5,expand=YES)
@@ -314,7 +308,8 @@ class Muon(ttk.Frame):
         self.start_btn=ttk.Button(
             master=container,
             text="开始扫描",
-            command=self.on_toggle,
+            # command=self.on_toggle,
+            command=lambda: self.thread_it(self.on_toggle),
             bootstyle=SUCCESS,
             width=8,
         )
@@ -327,24 +322,33 @@ class Muon(ttk.Frame):
 
         self.insert_log("多道扫描已开始，请耐心等待")
 
-        self.after(500,self.after_mul_scan)
 
-    def after_mul_scan(self):
-        """延后扫描"""
-        self.crtl_cv.configure(state='disable')
-        self.a.clear()
+        self.crtl_cv.configure(state='normal',command=self.switch_bar,text="切换")
 
-        mainbucket, subbucket, avtime, count = analyse(datapath = self.d, channels = 256, max_main_height = 100, max_sub_height = 30, **self.args)
+        self.mainbucket, self.subbucket, avtime, count = analyse(datapath = self.d, channels = 256, max_main_height = 100, max_sub_height = 30, **self.args)
         # print(avtime, count)
 
-        b2 = self.a.bar(np.arange(256), mainbucket)
-        b1 = self.a.bar(np.arange(256), subbucket)
-        self.a.legend([b1, b2], ["电子能量分布", r"$\mu$"+"子能量分布"])
-        self.canvas.draw()
+        self.show_now=2
+        self.switch_bar()
 
         self.insert_log(f"多道扫描已完成\n\n共扫描{count}个数据\n平均衰变时间为{avtime}s")
         
-
+    def switch_bar(self):
+        """切换统计图显示"""
+        self.a.clear()
+        if self.show_now==2:
+            b1 = self.a.bar(np.arange(256), self.subbucket)
+            b2 = self.a.bar(np.arange(256), self.mainbucket,color='orange')
+            self.a.legend([b1, b2], ["电子能量分布", r"$\mu$"+"子能量分布"])
+        elif self.show_now==1:
+            b2 = self.a.bar(np.arange(256), self.mainbucket,color='orange')
+            self.a.legend([b2], [r"$\mu$"+"子能量分布"])
+        else:
+            b1 = self.a.bar(np.arange(256), self.subbucket)
+            self.a.legend([b1], ["电子能量分布"])
+        
+        self.canvas.draw()
+        self.show_now= self.show_now+1 if self.show_now<2 else 0
 
     def on_submit(self):
         """修改超参数，判断超参数非法"""
@@ -432,6 +436,14 @@ class Muon(ttk.Frame):
         self.textbox.insert(END,insert_txt)
         self.textbox.configure(state="disabled")
         self.textbox.yview_moveto(1)
+
+    @staticmethod
+    def thread_it(func, *args):
+        """多线程，防止控件卡住"""
+        t = threading.Thread(target=func, args=args) 
+        #t.setDaemon(True)  # 守护--就算主界面关闭，线程也会留守后台运行（不对!）
+        t.start()      # 启动
+        # t.join()     # 阻塞--会卡死界面！
 
 if __name__ == "__main__":
     app=ttk.Window(

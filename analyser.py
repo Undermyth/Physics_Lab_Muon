@@ -34,7 +34,6 @@ def analyse(datapath: str,
     sub_width = max_sub_height / channels
     main_bucket_13731 = np.zeros(channels)
     sub_bucket_13731 = np.zeros(channels)
-    kernel = np.array([1,3,7,3,1])
     average_life = 0
     count = 0
 
@@ -68,16 +67,10 @@ def analyse(datapath: str,
                 count += 1
 
     # 1-3-7-3-1 wave filtering 
-    kernel = np.array([1, 3, 7, 3, 1])
+    kernel = np.array([1.0, 3.0, 7.0, 3.0, 1.0])
+    kernel/=kernel.sum()
     main_bucket_13731 = np.convolve(main_bucket, kernel, 'same')
     sub_bucket_13731  = np.convolve(sub_bucket,  kernel, 'same')
-    '''
-    main_bucket=np.pad(main_bucket,(2,2),'constant')
-    sub_bucket=np.pad(sub_bucket,(2,2),'constant')
-
-    main_bucket_13731=np.array([(main_bucket[i-2:i+3]*kernel).sum() for i in range(2, channels + 2)])
-    sub_bucket_13731=np.array([(sub_bucket[i-2:i+3]*kernel).sum() for i in range(2, channels + 2)])
-    '''
     '''
     for i in range(2, channels - 2):
         main_bucket_13731[i] = 1 * main_bucket[i - 2] + 3 * main_bucket[i - 1] + 7 * main_bucket[i] + 3 * main_bucket[i + 1] + 1 * main_bucket[i + 2]
