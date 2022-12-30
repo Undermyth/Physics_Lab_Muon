@@ -14,6 +14,7 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import matplotlib.pyplot as plt
 import matplotlib
 from pathlib import Path
+from algorithm import get_curve
 matplotlib.rcParams['font.sans-serif']=['SimHei']   # 用黑体显示中文
 matplotlib.rcParams['axes.unicode_minus']=False     # 正常显示负号
 
@@ -173,6 +174,14 @@ class Muon(ttk.Frame):
                     self.a.scatter([peak["main_peak"][0], peak["second_peak"][0]], [peak["main_peak"][1], peak["second_peak"][1]], color="red")
                 else:
                     self.a.scatter(peak["main_peak"][0],peak["main_peak"][1],color='orange')
+                
+                a = get_curve.get_curve_a()
+                b = get_curve.get_curve_b(self.w_show.x, self.w_show.y, outer_min_pos=peak["main_peak"][0])
+                def minus_exp(x):
+                    return -np.exp(a * x + b)
+                xtick = np.linspace(peak["main_peak"][0], peak["main_peak"][0] + self.w_show, 30)
+
+
         else:
             peak=self.w_show.peaks[self.show_now]
 
@@ -212,7 +221,7 @@ class Muon(ttk.Frame):
 
     def right_panel(self):
         """初始化右边"""
-        self.afterid = ttk.StringVar()
+        # self.afterid = ttk.StringVar()
         self.running=ttk.BooleanVar(value=False)
         self.init_fou=ttk.BooleanVar(value=False)
 
@@ -337,7 +346,7 @@ class Muon(ttk.Frame):
         self.crtl_cv.configure(state='normal',command=self.switch_bar,text="切换")
         self.analysing=0
 
-        self.insert_log(f"多道扫描已完成\n\n共扫描{count}个数据\n平均衰变时间为{avtime}s")
+        self.insert_log(f"多道扫描已完成\n\n共探测到{count}个µ子\n平均衰变时间为{avtime}s")
         
     def switch_bar(self):
         """切换统计图显示"""
@@ -359,22 +368,27 @@ class Muon(ttk.Frame):
         self.show_now= self.show_now+1 if self.show_now<2 else 0
 
     def on_submit(self):
+        if self.running.get() or self.analysing :
+            return 
         """修改超参数，判断超参数非法"""
-        self.w_show.noise_threshold=float(self.noise_threshold.get())
-        self.w_show.least_time     =float(self.least_time     .get())
-        self.w_show.most_time      =float(self.most_time      .get())
-        self.w_show.least_main_peak=float(self.least_main_peak.get())
-        self.w_show.least_sub_peak =float(self.least_sub_peak .get())
-        self.w_show.amplify_rate   =float(self.amplify_rate   .get())
-        if self.init_fou.get():
-            self.w.noise_threshold=float(self.noise_threshold.get())
-            self.w.least_time     =float(self.least_time     .get())
-            self.w.most_time      =float(self.most_time      .get())
-            self.w.least_main_peak=float(self.least_main_peak.get())
-            self.w.least_sub_peak =float(self.least_sub_peak .get())
-            self.w.amplify_rate   =float(self.amplify_rate   .get())
-        """弹个窗"""
-        self.insert_log("参数修改成功")
+        try:
+            self.w_show.noise_threshold=float(self.noise_threshold.get())
+            self.w_show.least_time     =float(self.least_time     .get())
+            self.w_show.most_time      =float(self.most_time      .get())
+            self.w_show.least_main_peak=float(self.least_main_peak.get())
+            self.w_show.least_sub_peak =float(self.least_sub_peak .get())
+            self.w_show.amplify_rate   =float(self.amplify_rate   .get())
+            if self.init_fou.get():
+                self.w.noise_threshold=float(self.noise_threshold.get())
+                self.w.least_time     =float(self.least_time     .get())
+                self.w.most_time      =float(self.most_time      .get())
+                self.w.least_main_peak=float(self.least_main_peak.get())
+                self.w.least_sub_peak =float(self.least_sub_peak .get())
+                self.w.amplify_rate   =float(self.amplify_rate   .get())
+            """弹个窗"""
+            self.insert_log("参数修改成功")
+        except:
+            self.insert_log("参数修改失败")
 
     def print_log(self,master):
         """初始化log（右下角）"""
@@ -394,7 +408,9 @@ class Muon(ttk.Frame):
 
 
     def on_toggle(self):
-        if not self.analysing and not self.init_fou.get() and not self.Initialize_oscilloscope():
+        if self.analysing:
+            return 
+        if not self.init_fou.get() and not self.Initialize_oscilloscope():
             return 
         """模式切换"""
         if self.running.get():
@@ -402,40 +418,51 @@ class Muon(ttk.Frame):
         else:
             self.start_scan()
 
+
     def start_scan(self):
         """开始扫描"""
-        self.afterid.set(self.after(1,self.scan))
+        self.t = threading.Thread(target=self.scan) 
+        self.t.start()
+        # self.afterid.set(self.after(1000,self.scan))
         self.running.set(True)
         self.start_btn.configure(bootstyle=(DANGER),text="停止扫描")
         self.insert_log("扫描已开始")
 
     def stop_scan(self):
         """停止扫描"""
-        self.after_cancel(self.afterid.get())
+        # self.after_cancel(self.afterid.get())
+        # threading.Thread._Thread__stop(self.t)
+        # self.t.exit()
         self.running.set(False)
+        time.sleep(2)
         self.start_btn.configure(bootstyle=(SUCCESS),text="开始扫描")
         self.insert_log("扫描已终止")
 
     def scan(self):
         """函数调用，数据写入文件"""
-        # print(self.maxn)
-        self.dms.get_data(self.w)
-        self.w.process_data()
-        for i in range(self.w.peaknum):
-            tmp = self.w.peaks[i]
-            if tmp["has_second_peak"]:
-                self.maxn+=1
-                self.w.save_waveform(self.d, f"double_{self.maxn}.csv")
-                self.load_one(f"double_{self.maxn}.csv")
-                self.draw_pre(f"double_{self.maxn}.csv")
-                break
-                # plt.scatter([tmp["main_peak"][0], tmp["second_peak"][0]], [tmp["main_peak"][1], tmp["second_peak"][1]], color = 'red')
+        cnt=0
+        while 1:
+            # print(self.maxn)
+            self.dms.get_data(self.w)
+            self.w.process_data()
+            for i in range(self.w.peaknum):
+                tmp = self.w.peaks[i]
+                if tmp["has_second_peak"]:
+                    self.maxn+=1
+                    self.w.save_waveform(self.d, f"double_{self.maxn}.csv")
+                    self.load_one(f"double_{self.maxn}.csv")
+                    self.draw_pre(f"double_{self.maxn}.csv")
+                    break
+                    # plt.scatter([tmp["main_peak"][0], tmp["second_peak"][0]], [tmp["main_peak"][1], tmp["second_peak"][1]], color = 'red')
 
-        """写log"""
-        # self.insert_log(f"( ﾟ∀。){str(self.maxn)}")
-        self.insert_log(f"已完成一次扫描，累计探测双峰{str(self.maxn)}个")
-        
-        self.afterid.set(self.after(1000,self.scan))
+            """写log"""
+            # self.insert_log(f"( ﾟ∀。){str(self.maxn)}")
+            cnt+=1
+            self.insert_log(f"已完成{cnt}次扫描，累计探测双峰{str(self.maxn)}个")
+
+            if not self.running.get():
+                break
+        # self.afterid.set(self.after(1000,self.scan))
 
     def insert_log(self,insert_txt):
         """写入log"""
@@ -449,7 +476,7 @@ class Muon(ttk.Frame):
     def thread_it(func, *args):
         """多线程，防止控件卡住"""
         t = threading.Thread(target=func, args=args) 
-        #t.setDaemon(True)  # 守护--就算主界面关闭，线程也会留守后台运行（不对!）
+        #t.setDaemon(True)  # 守护--就算主界面关闭，线程也会留守后台运行
         t.start()      # 启动
         # t.join()     # 阻塞--会卡死界面！
 

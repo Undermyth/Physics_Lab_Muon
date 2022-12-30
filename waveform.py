@@ -52,14 +52,14 @@ class waveform:
                                             flat_length = self.flat_length)
         self.peaknum = peak_num
         for i in range(peak_num):
-            self.peaks[i]["main_peak"][0], self.peaks[i]["main_peak"][1] = fix_peak(self.x, self.y, 
-                                                                                    min_pos = self.peaks[i]["main_peak"][0],
-                                                                                    noise_threshold = self.noise_threshold,
-                                                                                    not_on_line = self.not_on_line,
-                                                                                    sample_interval = self.sample_interval
-                                                                                    )
+            self.peaks[i]["main_peak"][0], self.peaks[i]["main_peak"][1], self.peaks[i]["detected"] = fix_peak(self.x, self.y, 
+                                                                                                            min_pos = self.peaks[i]["main_peak"][0],
+                                                                                                            noise_threshold = self.noise_threshold,
+                                                                                                            not_on_line = self.not_on_line,
+                                                                                                            sample_interval = self.sample_interval
+                                                                                                            )
             if self.peaks[i]["has_second_peak"]:
-                self.peaks[i]["second_peak"][0], self.peaks[i]["second_peak"][1] = fix_peak(self.x, self.y, 
+                self.peaks[i]["second_peak"][0], self.peaks[i]["second_peak"][1], _ = fix_peak(self.x, self.y, 
                                                                                         min_pos = self.peaks[i]["second_peak"][0],
                                                                                         noise_threshold = self.noise_threshold,
                                                                                         not_on_line = self.not_on_line,

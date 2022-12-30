@@ -51,9 +51,9 @@ def fix_peak(x: np.ndarray, y: np.ndarray, min_pos: Union[None, float], noise_th
     # final check. If the minimum value of y is still smaller than return_peak, 
     # then it's better to use the original peak, not the predicted one.
     if y[minpos] < return_peak:
-        return x[minpos], y[minpos]
+        return x[minpos], y[minpos], have_point_on_descending
     else:
-        return return_peakpos, return_peak
+        return return_peakpos, return_peak, have_point_on_descending
 
 # mock
 if __name__ == '__main__':
