@@ -99,7 +99,7 @@ class Muon(ttk.Frame):
         """选择一个数据"""
         # for item in self.tv.selection():
         #     item_text=self.tv.item(item,"values")
-        if self.tv.selection() and not self.scanning:
+        if self.tv.selection() and not self.analysing:
             item_text=self.tv.item(self.tv.selection()[0],"values")
             # print(self.d,item_text[0])
             self.draw_pre(item_text[0])
@@ -289,7 +289,7 @@ class Muon(ttk.Frame):
         """超参数的按钮"""
         container=ttk.Frame(master)
         container.pack(fill=X,expand=YES,pady=(15,10))
-        self.scanning=0
+        self.analysing=0
 
         ttk.Button(
             master=container,
@@ -326,7 +326,8 @@ class Muon(ttk.Frame):
         self.insert_log("多道扫描已开始，请耐心等待")
 
         self.crtl_cv.configure(state='disable',text="")
-        self.scanning=1
+        self.a.clear()
+        self.analysing=1
 
         self.mainbucket, self.subbucket, avtime, count = analyse(datapath = self.d, channels = 256, max_main_height = 100, max_sub_height = 30, **self.args)
         # print(avtime, count)
@@ -334,7 +335,7 @@ class Muon(ttk.Frame):
         self.show_now=2
         self.switch_bar()
         self.crtl_cv.configure(state='normal',command=self.switch_bar,text="切换")
-        self.scanning=0
+        self.analysing=0
 
         self.insert_log(f"多道扫描已完成\n\n共扫描{count}个数据\n平均衰变时间为{avtime}s")
         
@@ -352,6 +353,8 @@ class Muon(ttk.Frame):
             b1 = self.a.bar(np.arange(256), self.subbucket)
             self.a.legend([b1], ["电子能量分布"])
         
+        self.a.set_xlabel("道数")
+        self.a.set_ylabel("计数")
         self.canvas.draw()
         self.show_now= self.show_now+1 if self.show_now<2 else 0
 
@@ -391,7 +394,7 @@ class Muon(ttk.Frame):
 
 
     def on_toggle(self):
-        if not self.scanning and not self.init_fou.get() and not self.Initialize_oscilloscope():
+        if not self.analysing and not self.init_fou.get() and not self.Initialize_oscilloscope():
             return 
         """模式切换"""
         if self.running.get():
