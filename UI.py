@@ -176,7 +176,9 @@ class Muon(ttk.Frame):
         else:
             peak=self.w_show.peaks[self.show_now]
 
-            show_range=np.where((peak["main_peak"][0]-self.args["most_time"]*(1-Golden_ratio)<self.X) & (self.X<peak["main_peak"][0]+self.args["most_time"]*Golden_ratio))
+            st=peak["main_peak"][0]-self.args["most_time"]*1.2*(Golden_ratio)
+            ed=peak["main_peak"][0]+self.args["most_time"]*1.2
+            show_range=np.where((st<self.X) & (self.X<ed))
             self.a.plot(self.X[show_range],self.Y[show_range])
             if peak["has_second_peak"]:
                 self.a.scatter([peak["main_peak"][0], peak["second_peak"][0]], [peak["main_peak"][1], peak["second_peak"][1]], color="red")
@@ -287,6 +289,7 @@ class Muon(ttk.Frame):
         """超参数的按钮"""
         container=ttk.Frame(master)
         container.pack(fill=X,expand=YES,pady=(15,10))
+        self.scanning=0
 
         ttk.Button(
             master=container,
@@ -388,7 +391,7 @@ class Muon(ttk.Frame):
 
 
     def on_toggle(self):
-        if not self.init_fou.get() and not self.Initialize_oscilloscope():
+        if not self.scanning and not self.init_fou.get() and not self.Initialize_oscilloscope():
             return 
         """模式切换"""
         if self.running.get():
