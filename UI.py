@@ -360,19 +360,19 @@ class Muon(ttk.Frame):
 
     def on_submit(self):
         """修改超参数，判断超参数非法"""
-        self.w_show.noise_threshold=self.noise_threshold.get()
-        self.w_show.least_time     =self.least_time     .get()
-        self.w_show.most_time      =self.most_time      .get()
-        self.w_show.least_main_peak=self.least_main_peak.get()
-        self.w_show.least_sub_peak =self.least_sub_peak .get()
-        self.w_show.amplify_rate   =self.amplify_rate   .get()
+        self.w_show.noise_threshold=float(self.noise_threshold.get())
+        self.w_show.least_time     =float(self.least_time     .get())
+        self.w_show.most_time      =float(self.most_time      .get())
+        self.w_show.least_main_peak=float(self.least_main_peak.get())
+        self.w_show.least_sub_peak =float(self.least_sub_peak .get())
+        self.w_show.amplify_rate   =float(self.amplify_rate   .get())
         if self.init_fou.get():
-            self.w.noise_threshold=self.noise_threshold.get()
-            self.w.least_time     =self.least_time     .get()
-            self.w.most_time      =self.most_time      .get()
-            self.w.least_main_peak=self.least_main_peak.get()
-            self.w.least_sub_peak =self.least_sub_peak .get()
-            self.w.amplify_rate   =self.amplify_rate   .get()
+            self.w.noise_threshold=float(self.noise_threshold.get())
+            self.w.least_time     =float(self.least_time     .get())
+            self.w.most_time      =float(self.most_time      .get())
+            self.w.least_main_peak=float(self.least_main_peak.get())
+            self.w.least_sub_peak =float(self.least_sub_peak .get())
+            self.w.amplify_rate   =float(self.amplify_rate   .get())
         """弹个窗"""
         self.insert_log("参数修改成功")
 
