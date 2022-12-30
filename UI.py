@@ -99,7 +99,7 @@ class Muon(ttk.Frame):
         """选择一个数据"""
         # for item in self.tv.selection():
         #     item_text=self.tv.item(item,"values")
-        if self.tv.selection():
+        if self.tv.selection() and not self.scanning:
             item_text=self.tv.item(self.tv.selection()[0],"values")
             # print(self.d,item_text[0])
             self.draw_pre(item_text[0])
@@ -322,14 +322,16 @@ class Muon(ttk.Frame):
 
         self.insert_log("多道扫描已开始，请耐心等待")
 
-
-        self.crtl_cv.configure(state='normal',command=self.switch_bar,text="切换")
+        self.crtl_cv.configure(state='disable',text="")
+        self.scanning=1
 
         self.mainbucket, self.subbucket, avtime, count = analyse(datapath = self.d, channels = 256, max_main_height = 100, max_sub_height = 30, **self.args)
         # print(avtime, count)
 
         self.show_now=2
         self.switch_bar()
+        self.crtl_cv.configure(state='normal',command=self.switch_bar,text="切换")
+        self.scanning=0
 
         self.insert_log(f"多道扫描已完成\n\n共扫描{count}个数据\n平均衰变时间为{avtime}s")
         
