@@ -68,11 +68,16 @@ def analyse(datapath: str,
                 count += 1
 
     # 1-3-7-3-1 wave filtering 
+    kernel = np.array([1, 3, 7, 3, 1])
+    main_bucket_13731 = np.convolve(main_bucket, kernel, 'same')
+    sub_bucket_13731  = np.convolve(sub_bucket,  kernel, 'same')
+    '''
     main_bucket=np.pad(main_bucket,(2,2),'constant')
     sub_bucket=np.pad(sub_bucket,(2,2),'constant')
 
     main_bucket_13731=np.array([(main_bucket[i-2:i+3]*kernel).sum() for i in range(2, channels + 2)])
     sub_bucket_13731=np.array([(sub_bucket[i-2:i+3]*kernel).sum() for i in range(2, channels + 2)])
+    '''
     '''
     for i in range(2, channels - 2):
         main_bucket_13731[i] = 1 * main_bucket[i - 2] + 3 * main_bucket[i - 1] + 7 * main_bucket[i] + 3 * main_bucket[i + 1] + 1 * main_bucket[i + 2]
@@ -96,6 +101,8 @@ def analyse(datapath: str,
 if __name__ == '__main__':
 
     import matplotlib.pyplot as plt
+    import matplotlib
+    matplotlib.rcParams['font.sans-serif']=['SimHei']   # 用黑体显示中文
 
     waveargs = {
         "time_line": 1e-7,
@@ -109,9 +116,13 @@ if __name__ == '__main__':
         "least_sub_peak": 2
     }
 
-    mainbucket, subbucket, avtime, count = analyse(datapath = './data/', channels = 256, max_main_height = 60, max_sub_height = 30, **waveargs)
+    mainbucket, subbucket, avtime, count = analyse(datapath = './data/', channels = 1024, max_main_height = 100, max_sub_height = 30, **waveargs)
+    # mainbucket = np.arange(256)
+    # subbucket = np.arange(256)
 
-    plt.bar(np.arange(256), mainbucket)
-    plt.bar(np.arange(256), subbucket)
+    b1 = plt.bar(np.arange(1024), mainbucket, color = 'orange')
+    # b2 = plt.bar(np.arange(256), subbucket, color = 'blue')
+
+    # plt.legend([b1, b2], [r"$\mu$"+"子能量分布", "电子能量分布"])
     print(avtime, count)
     plt.show()

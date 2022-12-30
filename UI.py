@@ -168,18 +168,26 @@ class Muon(ttk.Frame):
         if self.show_now==self.w_show.peaknum:
             self.a.plot(self.X,self.Y)
             for peak in self.w_show.peaks:
-                self.a.scatter(peak["main_peak"][0],peak["main_peak"][1],color='red')
+                # self.a.scatter(peak["main_peak"][0],peak["main_peak"][1],color='red')
+                # if peak["has_second_peak"]:
+                #     self.a.scatter(peak["second_peak"][0],peak["second_peak"][1],color='red')
                 if peak["has_second_peak"]:
-                    self.a.scatter(peak["second_peak"][0],peak["second_peak"][1],color='red')
+                    self.a.scatter([peak["main_peak"][0], peak["second_peak"][0]], [peak["main_peak"][1], peak["second_peak"][1]], color="red")
+                else:
+                    self.a.scatter(peak["main_peak"][0],peak["main_peak"][1],color='orange')
         else:
             peak=self.w_show.peaks[self.show_now]
 
             show_range=np.where((peak["main_peak"][0]-self.args["most_time"]*(1-Golden_ratio)<self.X) & (self.X<peak["main_peak"][0]+self.args["most_time"]*Golden_ratio))
             self.a.plot(self.X[show_range],self.Y[show_range])
             
-            self.a.scatter(peak["main_peak"][0],peak["main_peak"][1],color='red')
+            # self.a.scatter(peak["main_peak"][0],peak["main_peak"][1],color='red')
+            # if peak["has_second_peak"]:
+            #     self.a.scatter(peak["second_peak"][0],peak["second_peak"][1],color='red')
             if peak["has_second_peak"]:
-                self.a.scatter(peak["second_peak"][0],peak["second_peak"][1],color='red')
+                self.a.scatter([peak["main_peak"][0], peak["second_peak"][0]], [peak["main_peak"][1], peak["second_peak"][1]], color="red")
+            else:
+                self.a.scatter(peak["main_peak"][0],peak["main_peak"][1],color='orange')
 
         self.a.set_xlabel("时间/t")
         self.a.set_ylabel("电压/V")
@@ -262,14 +270,14 @@ class Muon(ttk.Frame):
 
     def Initialize_oscilloscope(self):
         """初始化示波器"""
-        try:
-            self.dms = dm.dataengine(main_scale = '25E-6')
-            self.init_fou.set(True)
-            self.insert_log("示波器已初始化完成")
-            return 1
-        except :
-            self.insert_log("示波器初始化失败")
-            return 0
+        # try:
+        self.dms = dm.dataengine(main_scale = '25E-6')
+        self.init_fou.set(True)
+        self.insert_log("示波器已初始化完成")
+        return 1
+        # except :
+        #     self.insert_log("示波器初始化失败")
+        #     return 0
 
     def create_from_entry(self, master, label, variable):
         """超参数的输入"""
@@ -326,11 +334,12 @@ class Muon(ttk.Frame):
         self.crtl_cv.configure(state='disable')
         self.a.clear()
 
-        mainbucket, subbucket, avtime, count = analyse(datapath = self.d, channels = 256, max_main_height = 60, max_sub_height = 30, **self.args)
+        mainbucket, subbucket, avtime, count = analyse(datapath = self.d, channels = 256, max_main_height = 100, max_sub_height = 30, **self.args)
         # print(avtime, count)
 
-        self.a.bar(np.arange(256), mainbucket)
-        self.a.bar(np.arange(256), subbucket)
+        b2 = self.a.bar(np.arange(256), mainbucket)
+        b1 = self.a.bar(np.arange(256), subbucket)
+        self.a.legend([b1, b2], ["电子能量分布", r"$\mu$"+"子能量分布"])
         self.canvas.draw()
 
         self.insert_log(f"多道扫描已完成\n\n共扫描{count}个数据\n平均衰变时间为{avtime}s")
