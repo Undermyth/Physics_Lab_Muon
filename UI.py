@@ -337,6 +337,9 @@ class Muon(ttk.Frame):
 
     def mul_scan(self):
         """调用多道扫描"""
+        if self.analysing:
+            return 
+
         if self.running.get():
             self.stop_scan()
 
