@@ -86,7 +86,8 @@ def analyse(datapath: str,
     sub_bucket_13731[channels - 2] = sub_bucket[channels - 2]
     sub_bucket_13731[channels - 1] = sub_bucket[channels - 1]
     '''
-    average_life /= count
+    if count != 0:
+        average_life /= count
 
     return main_bucket_13731, sub_bucket_13731, average_life, count
 
