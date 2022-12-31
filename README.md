@@ -19,7 +19,7 @@ Muon detection lab code for 2022 Autumn
 
 模拟的话，我们不会。找模拟的去。
 
-没辣！祝各位好运！仓库我待会会整理整理。联系方式：3290402927@qq.com(我的)，？？？？？(ck的)
+没辣！祝各位好运！仓库我待会会整理整理。联系方式：3290402927@qq.com(我的)，Tian42chen@gmail.com(ck的)
 
 Completed in Dec 31st, 2022
 
