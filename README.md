@@ -1,7 +1,7 @@
 # Physics_Lab_Muon
 Muon detection lab code for 2022 Autumn
 
-<img src="/Users/a/Desktop/program/2211/github-desktop/Muon_final/icon.JPG" alt="icon" style="zoom:50%;" />
+<img src="https://github.com/Undermyth/Physics_Lab_Muon/blob/main/icon.JPG" alt="icon" style="zoom:50%;" />
 
 本次实验已完结
 
